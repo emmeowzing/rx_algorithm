@@ -7,7 +7,7 @@ The RX algorithm in Python 3.6+ for image data.
 
 from utils import plot
 
-from typing import Generator
+from typing import Generator, Callable as Function
 from PIL import Image
 from contextlib import contextmanager
 from math import log2
@@ -15,6 +15,17 @@ from math import log2
 import os
 import numpy as np
 
+# We don't have to remove @profile decorators for line_profiler
+import builtins
+
+try:
+    builtins.profile
+except AttributeError:
+    def profile(f: Function) -> Function:
+        return f
+    builtins.profile = profile
+
+# Directory for saving generated data
 REFERENCE_OUT_DIR = 'compression_data' + os.sep
 
 
@@ -72,6 +83,7 @@ def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
         return os.path.getsize(name)
 
 
+@profile
 def rx(imageName: str, sparse: bool =False) -> np.ndarray:
     """
     Compute the RX algorithm on an image. This function returns an array with one
@@ -85,13 +97,14 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
     the pixels.
     """
     with getImage(imageName) as imageArray:
-        if imageArray.ndim > 3:
+        if imageArray.ndim != 3:
             raise ValueError(f'rx expected image with 3 axes, received {axes}')
         
         Y, X, channels = imageArray.shape
+        size = Y * X
         
         if sparse:
-            # Estimate entropy from subset
+            ## Estimate entropy from subset
             nullSize = generateNullExtreme(X, Y)
             randSize = generateRandExtreme(X, Y)
             dataSize = os.path.getsize(imageName)
@@ -103,15 +116,17 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
             if dataSize < nullSize:
                 dataSize = nullSize
             
-            # TODO: Better determination of subset cardinality from entropy estimate?
-            entropy = (dataSize - nullSize) / (randSize - nullSize) * X * Y
-            print(entropy)
+            # FIXME: best determination of subset cardinality frm entropy estimate?
+            entropy = int((dataSize - nullSize) / (randSize - nullSize) * size)
             
-            flatImage = imageArray.reshaep(X * Y, channels).T
-            sample = np.random.choice(flatImage)
-            
+            flatImage = imageArray.reshape(size, channels)
+            print(flatImage.shape)
+            sample = np.random.choice(, size=entropy, )
+
+            average = np.average(sample, axis=(0))
+            print(average.shape)
         else:
-            # Use every pixel
+            ## Use every pixel
             entropy = X * Y
             
             # Get the absolute average RGB vector
@@ -124,8 +139,6 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
             # Compute the inverse covariance matrix
             covMat = np.cov(subtracted.reshape(entropy, channels).T, ddof=0)
             invCovMat = np.linalg.inv(covMat)
-            print(covMat)
-            print(invCovMat)
             
             # Compute mahalanobis metric on every pixel
             new_arr = np.einsum(
@@ -134,7 +147,7 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
             )
             new_arr = np.sqrt(new_arr)
             
-            plot(new_arr, REFERENCE_OUT_DIR + 'malanobisified.png')
+            #plot(new_arr, REFERENCE_OUT_DIR + 'malanobisified.png')
 
             return new_arr
 
@@ -143,4 +156,4 @@ if __name__ == '__main__':
     #print(generateNullExtreme(1333, 750))
     #print(generateRandomExtreme(1333, 750))
     #print(os.path.getsize(REFERENCE_OUT_DIR + os.sep + 'example_1MP.png'))
-    rx('compression_data/example_1MP.png', sparse=False)
+    rx('compression_data/example_1MP.png', sparse=True)
