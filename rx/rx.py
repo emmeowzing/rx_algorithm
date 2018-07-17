@@ -5,6 +5,8 @@
 The RX algorithm in Python 3.6+ for image data.
 """
 
+from utils import plot
+
 from typing import Generator
 from PIL import Image
 from contextlib import contextmanager
@@ -31,6 +33,12 @@ def getImage(pathToImage: str) -> Generator[np.ndarray, None, None]:
     yield im
 
 
+# FIXME: The following two functions (for some reason) write data `asynchronously`
+#        and break the following `rx` function (unless it's the other way around).
+#        Running the script several times fixes the issue as a single image is
+#        written each time.
+
+
 def generateRandExtreme(X:int, Y: int, channels: int =3, format: str ='png') -> int:
     """
     Generate a random image for reference. The default is PNG because this image
@@ -42,6 +50,7 @@ def generateRandExtreme(X:int, Y: int, channels: int =3, format: str ='png') -> 
     if name in os.listdir(REFERENCE_OUT_DIR):
         return os.path.getsize(REFERENCE_OUT_DIR + name)
     else:
+        # Generate a random image
         data = np.random.randint(0, 255, size=(Y,X,channels))
         to_save = Image.fromarray(data.astype(np.uint8))
         to_save.save(REFERENCE_OUT_DIR + name)
@@ -56,6 +65,7 @@ def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
     if name in os.listdir(REFERENCE_OUT_DIR):
         return os.path.getsize(REFERENCE_OUT_DIR + name)
     else:
+        # Generate a null image
         data = np.zeros((Y,X,channels))
         to_save = Image.fromarray(data.astype(np.uint8))
         to_save.save(REFERENCE_OUT_DIR + name)
@@ -71,27 +81,66 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
     Set `sparse' to true if you're expecting the image to be largely the same color,
     or, in other words, most of the pixels to be very similar (e.g. an image of a
     field looking down from a drone will be mostly green). This produces a time
-    savings, since the variance-covariance matrix may be estimated from a random
-    subset of the pixels.
+    savings, since the covariance matrix may be estimated from a random subset of 
+    the pixels.
     """
     with getImage(imageName) as imageArray:
+        if imageArray.ndim > 3:
+            raise ValueError(f'rx expected image with 3 axes, received {axes}')
+        
         Y, X, channels = imageArray.shape
-
+        
         if sparse:
-            # Estimate entropy
+            # Estimate entropy from subset
             nullSize = generateNullExtreme(X, Y)
             randSize = generateRandExtreme(X, Y)
             dataSize = os.path.getsize(imageName)
+
+            # Control bounds (just in case, unlikely)
+            if dataSize > randSize:
+                dataSize = randSize
+
+            if dataSize < nullSize:
+                dataSize = nullSize
+            
+            # TODO: Better determination of subset cardinality from entropy estimate?
             entropy = (dataSize - nullSize) / (randSize - nullSize) * X * Y
             print(entropy)
+            
+            flatImage = imageArray.reshaep(X * Y, channels).T
+            sample = np.random.choice(flatImage)
+            
         else:
             # Use every pixel
             entropy = X * Y
-            print(entropy)
+            
+            # Get the absolute average RGB vector
+            average = np.average(imageArray, axis=(0, 1))
+            
+            # Compute difference between every RGB value and the mean RGB value
+            # (N, M, channels) - (channels,)
+            subtracted = imageArray - average
+            
+            # Compute the inverse covariance matrix
+            covMat = np.cov(subtracted.reshape(entropy, channels).T, ddof=0)
+            invCovMat = np.linalg.inv(covMat)
+            print(covMat)
+            print(invCovMat)
+            
+            # Compute mahalanobis metric on every pixel
+            new_arr = np.einsum(
+                'ijk,km,ijm->ij', subtracted, invCovMat, subtracted,
+                optimize=True
+            )
+            new_arr = np.sqrt(new_arr)
+            
+            plot(new_arr, REFERENCE_OUT_DIR + 'malanobisified.png')
+
+            return new_arr
 
 
 if __name__ == '__main__':
     #print(generateNullExtreme(1333, 750))
     #print(generateRandomExtreme(1333, 750))
     #print(os.path.getsize(REFERENCE_OUT_DIR + os.sep + 'example_1MP.png'))
-    rx('compression_data/example_1MP.png', sparse=True)
+    rx('compression_data/example_1MP.png', sparse=False)
