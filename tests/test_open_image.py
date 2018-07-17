@@ -4,8 +4,7 @@ import unittest
 import os
 import ntpath
 
-from rx.rx import getImage
-from rx.utils import plot
+from rx.utils import plot, getImage
 
 
 class TestOpenPlotImage(unittest.TestCase):
