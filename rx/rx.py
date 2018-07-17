@@ -2,7 +2,7 @@
 The RX algorithm in Python 3.6+ for image data.
 """
 
-from typing import Callable as Function
+from typing import Callable as Function, Optional
 
 from PIL import Image
 from math import log2
@@ -22,6 +22,9 @@ except AttributeError:
 
 # Directory for saving generated data
 REFERENCE_OUT_DIR = 'compression_data' + os.sep
+
+if not os.path.exists(REFERENCE_OUT_DIR):
+    os.mkdir(REFERENCE_OUT_DIR)
 
 
 def generateRandExtreme(X: int, Y: int, channels: int =3, format: str ='png') -> int:
@@ -58,7 +61,8 @@ def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
 
 
 @profile
-def rx(imageArray: np.ndarray, sparse: bool =False) -> np.ndarray:
+def rx(imageArray: np.ndarray, sparse: bool =False, 
+                               npts: Optional[int] =None) -> np.ndarray:
     """
     Compute the RX algorithm on an image. This function returns an array with 
     one channel, which represents the number of standard deviations a certain 
@@ -67,8 +71,11 @@ def rx(imageArray: np.ndarray, sparse: bool =False) -> np.ndarray:
     Set `sparse' to true if you're expecting the image to be largely the same 
     color, or, in other words, most of the pixels to be very similar (e.g. an 
     image of a field looking down from a drone will be mostly green). This 
-    produces a time savings, since the covariance matrix may be estimated from 
+    produces a time savings since the covariance matrix may be estimated from 
     a random subset of the pixels.
+
+    Set `sparse' and enter a number of pixels to use if you'd like to override
+    the default estimate of the number of pixels to use.
     """
     if imageArray.ndim != 3:
         raise ValueError(
@@ -81,19 +88,22 @@ def rx(imageArray: np.ndarray, sparse: bool =False) -> np.ndarray:
     if sparse:
         ## Estimate entropy from subset
 
-        nullSize = generateNullExtreme(X, Y)
-        randSize = generateRandExtreme(X, Y)
-        dataSize = os.path.getsize(imageName)
-        
-        # Control bounds (just in case, though it's unlikely)
-        if dataSize > randSize:
-            dataSize = randSize
-        
-        if dataSize < nullSize:
-            dataSize = nullSize
-        
-        # FIXME: best determination of subset cardinality frm entropy estimate?
-        entropy = int((dataSize - nullSize) / (randSize - nullSize) * size)
+        if sparse and npts is not None:
+            entropy = npts
+        else:
+            nullSize = generateNullExtreme(X, Y)
+            randSize = generateRandExtreme(X, Y)
+            dataSize = os.path.getsize(imageName)
+            
+            # Control bounds (just in case, though it's unlikely)
+            if dataSize > randSize:
+                dataSize = randSize
+            
+            if dataSize < nullSize:
+                dataSize = nullSize
+            
+            # FIXME: best determination of subset size from entropy estimate?
+            entropy = int((dataSize - nullSize) / (randSize - nullSize) * size)
         
         # Generate a subset of the image to work with
         sample = np.random.choice(size, size=entropy)
