@@ -1,11 +1,8 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 The RX algorithm in Python 3.6+ for image data.
 """
 
-from utils import plot
+from .utils import plot
 
 from typing import Generator, Callable as Function
 from PIL import Image
@@ -149,7 +146,3 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
         new_arr = np.sqrt(new_arr)
 
         return new_arr
-
-
-if __name__ == '__main__':
-    rx('compression_data/example_1MP.png', sparse=False)
