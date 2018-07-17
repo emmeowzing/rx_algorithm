@@ -13,12 +13,12 @@ class TestOpenPlotImage(unittest.TestCase):
     Open an image with getImage.
     """ 
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.IM_DIR = os.getcwd() + os.sep + 'tests' + os.sep \
                                            + 'test_images' + os.sep
         self.images = os.listdir(self.IM_DIR)
         
-    def test_images_open(self):
+    def test_images_open(self) -> None:
         original_length = len(self.images)
         
         for image in self.images:

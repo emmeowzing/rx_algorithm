@@ -89,7 +89,9 @@ def rx(imageName: str, sparse: bool =False) -> np.ndarray:
     """
     with getImage(imageName) as imageArray:
         if imageArray.ndim != 3:
-            raise ValueError(f'rx expected image with 3 axes, received {axes}')
+            raise ValueError(
+                f'rx expected image with 3 axes, received {imageArray.ndim}'
+            )
         
         Y, X, channels = imageArray.shape
         size = Y * X
