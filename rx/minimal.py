@@ -19,4 +19,4 @@ def generateNull(X: int, Y: int, channels: int =3, format: str ='png') -> int:
 
 
 if __name__ == '__main__':
-    generateNull(1333, 750)
+    print(generateNull(1333, 750))

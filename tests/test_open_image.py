@@ -36,4 +36,4 @@ class TestOpenPlotImage(unittest.TestCase):
                 os.remove(self.IM_DIR + image)
 
         # Assert that we get more images
-        self.assertEqual(original_length, new_length / 2)
+        self.assertEqual(original_length, new_length // 2)
