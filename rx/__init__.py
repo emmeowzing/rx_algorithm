@@ -1,2 +1,2 @@
 from .rx import rx
-from .utils import plot
+from .utils import plot, getImage
