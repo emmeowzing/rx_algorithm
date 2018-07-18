@@ -14,9 +14,10 @@ from rx.utils import getImage, plot
 
 import unittest
 import line_profiler
+import os
 
-
-IMAGE = 'test_images/example_1MP.png'
+IM_DIR = os.getcwd() + os.sep + 'tests' + os.sep \
+              + 'test_images' + os.sep
 
 
 # TODO: Finish
@@ -24,9 +25,8 @@ IMAGE = 'test_images/example_1MP.png'
 class TestSpeed(unittest.TestCase):
 
     def setUp(self) -> None:
-        with getImage(IMAGE) as im:
+        with getImage(IM_DIR + 'example_1MP.png') as im:
             self.arr = im
 
     def test_full_speed(self) -> None:
-        with line_profiler.LineProfiler(rx) as profile:
-            profile(self.arr)
+        line_profiler.LineProfiler(rx)
