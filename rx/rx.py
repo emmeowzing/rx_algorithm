@@ -2,23 +2,12 @@
 The RX algorithm in Python 3.6+ for image data.
 """
 
-from typing import Callable as Function, Optional
+from typing import Optional
 
 from PIL import Image
-from math import log2
 
 import os
 import numpy as np
-
-# We don't have to remove @profile decorators for line_profiler
-import builtins
-
-try:
-    builtins.profile
-except AttributeError:
-    def profile(f: Function) -> Function:
-        return f
-    builtins.profile = profile
 
 # Directory for saving generated data
 REFERENCE_OUT_DIR = 'compression_data' + os.sep
@@ -60,9 +49,8 @@ def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
         return os.path.getsize(REFERENCE_OUT_DIR + name)
 
 
-@profile
 def rx(imageArray: np.ndarray, sparse: bool =False, 
-                               npts: Optional[int] =None) -> np.ndarray:
+       imPath: Optional[str] =None, npts: Optional[int] =None) -> np.ndarray:
     """
     Compute the RX algorithm on an image. This function returns an array with 
     one channel, which represents the number of standard deviations a certain 
@@ -72,10 +60,13 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
     color, or, in other words, most of the pixels to be very similar (e.g. an 
     image of a field looking down from a drone will be mostly green). This 
     produces a time savings since the covariance matrix may be estimated from 
-    a random subset of the pixels.
+    a random subset of the pixels. If you do not explicitly state the number
+    of pixels to use in this subset, then you're required to provide a path to
+    the original image file for subset cardinality estimation.
 
     Set `sparse' and enter a number of pixels to use if you'd like to override
-    the default estimate of the number of pixels to use.
+    the default estimate of the number of pixels to use. This of course does
+    not require you to specify the image's path.
     """
     if imageArray.ndim != 3:
         raise ValueError(
@@ -91,9 +82,14 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
         if sparse and npts is not None:
             entropy = npts
         else:
+            if imPath is None:
+                raise ValueError(
+                    'Must provide path to image file for entropy estimation'
+                )
+
             nullSize = generateNullExtreme(X, Y)
             randSize = generateRandExtreme(X, Y)
-            dataSize = os.path.getsize(imageName)
+            dataSize = os.path.getsize(imPath)
             
             # Control bounds (just in case, though it's unlikely)
             if dataSize > randSize:
@@ -119,7 +115,6 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
         invCovMat = np.linalg.inv(covMat)
     else:
         ## Use every pixel
-        entropy = X * Y
         
         # Get the absolute average RGB vector
         average = np.average(imageArray, axis=(0, 1))
@@ -129,7 +124,7 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
         subtracted = imageArray - average
         
         # Compute the inverse covariance matrix
-        covMat = np.cov(subtracted.reshape(entropy, channels).T, ddof=0)
+        covMat = np.cov(subtracted.reshape(size, channels).T, ddof=0)
         invCovMat = np.linalg.inv(covMat)
         
     # Compute mahalanobis metric on every pixel

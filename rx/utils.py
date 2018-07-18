@@ -1,5 +1,3 @@
-# coding=utf-8
-
 """
 Additional utilities unrelated to the algorithm's implementation.
 """
@@ -8,6 +6,7 @@ from typing import Generator
 
 from PIL import Image
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from contextlib import contextmanager
 
 import numpy as np
@@ -21,6 +20,21 @@ def plot(image: np.ndarray, imageName: str) -> None:
     """
     plt.imshow(image, interpolation='none', cmap='gist_heat')
     plt.savefig(imageName)
+
+
+def plotCube(image: np.ndarray) -> None:
+    """
+    Plot the image's 3D cube.
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ndims = image.ndims
+
+    if ndims > 3:
+        raise ValueError(f'Unable to plot array with >3 channels, received {ndims}')
+    if image.shape[ndims - 1]:
+        raise ValueError(f'Unable to ')
 
 
 @contextmanager
