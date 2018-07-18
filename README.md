@@ -7,6 +7,6 @@ A fast (experimental) RX algorithm implementation in Python 3.6+ with overhead r
 from rx import rx
 from rx.utils import plot
 
-X = rx('/path/to/png_image.png')
+X = rx(array)
 plot(X, 'out.png')
 ```
