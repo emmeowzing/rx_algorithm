@@ -22,21 +22,6 @@ def plot(image: np.ndarray, imageName: str) -> None:
     plt.savefig(imageName)
 
 
-def plotCube(image: np.ndarray) -> None:
-    """
-    Plot the image's 3D cube.
-    """
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    ndims = image.ndims
-
-    if ndims > 3:
-        raise ValueError(f'Unable to plot array with >3 channels, received {ndims}')
-    if image.shape[ndims - 1]:
-        raise ValueError(f'Unable to ')
-
-
 @contextmanager
 def getImage(pathToImage: str) -> Generator[np.ndarray, None, None]:
     """
