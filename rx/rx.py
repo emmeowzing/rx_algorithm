@@ -79,7 +79,7 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
     if sparse:
         ## Estimate entropy from subset
 
-        if sparse and npts is not None:
+        if npts is not None:
             entropy = npts
         else:
             if imPath is None:
