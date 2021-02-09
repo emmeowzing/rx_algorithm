@@ -13,7 +13,7 @@ setuptools.setup(
     name='rxpy',
     version='1.0',
     author='Brandon Doyle',
-    author_email='bjd2385@aperiodicity.com',
+    author_email='bjd2385.linux@gmail.com',
     description='A fast (experimental) RX algorithm implementation on 3-dimensional image data/tensors',
     long_description=long_description,
     url='https://github.com/bjd2385/rxpy',
