@@ -1,0 +1,52 @@
+version: 2.1
+
+setup: true
+
+
+orbs:
+  dynamic: bjd2385/dynamic-continuation@3.6.12
+  general: bjd2385/general@0.7.5
+
+
+workflows:
+  rxpy:
+    jobs:
+      - dynamic/continue:
+          context: orb-publishing
+
+      # On tag
+
+      - general/orb-pack:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - slack/on-hold:
+          context: slack
+          requires:
+            - general/orb-pack
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - request-approval:
+          requires:
+            - slack/on-hold
+          type: approval
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+$/
+
+      - general/github-release:
+          context: github
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v?[0-9]+\.[0-9]+\.[0-9]+$/
