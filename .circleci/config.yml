@@ -14,7 +14,7 @@ workflows:
   premiscale:
     jobs:
       - dynamic/continue:
-          context: circleci
+          context: orb-publishing
 
       - slack/on-hold:
           context: slack
