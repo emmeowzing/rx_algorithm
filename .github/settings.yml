@@ -1,9 +1,9 @@
 _extends: .github
 
 repository:
-  name: rxpy
+  name: rx_algorithm
   description:  A fast (experimental) RX algorithm implementation in Python 3.9+
-  homepage: https://github.com/bjd2385/rxpy
+  homepage: https://github.com/bjd2385/rx_algorithm
 
   # A comma-separated list of topics to set on the repository
   topics: rx, algorithm, mahalanobis, image

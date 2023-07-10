@@ -36,7 +36,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-# rxpy = "src.rxpy.cli:main"
+# rxpy = "src.rx.cli:main"
 
 [tool.mypy]
 python_version = "3.9"

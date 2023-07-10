@@ -11,7 +11,7 @@ orbs:
 
 
 workflows:
-  rxpy:
+  rx_algorithm:
     jobs:
       - dynamic/continue:
           context: orb-publishing
