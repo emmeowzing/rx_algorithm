@@ -47,8 +47,8 @@ repos:
   - repo: local
     hooks:
       - id: pylint
-        name: pylint --rcfile="$(pwd)"/pyproject.toml "$(pwd)"/src
-        entry: pylint
+        name: pylint
+        entry: pylint --rcfile="$(pwd)"/pyproject.toml "$(pwd)"/src
         language: system
         types: [python]
         require_serial: true
