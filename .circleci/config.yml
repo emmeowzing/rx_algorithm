@@ -48,6 +48,7 @@ workflows:
       - general/python-release-poetry:
           name: pypi upload [python]
           context: pypi
+          pypirc-config: .pypirc
           username: $PYPI_USERNAME
           password: $API_TOKEN
           repository: python
