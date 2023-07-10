@@ -51,6 +51,7 @@ repos:
         entry: pylint --rcfile="$(pwd)"/pyproject.toml "$(pwd)"/src
         language: system
         types: [python]
+        files: \*.py
         require_serial: true
 
   - repo: https://github.com/abravalheri/validate-pyproject
