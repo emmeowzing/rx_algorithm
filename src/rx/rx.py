@@ -63,10 +63,9 @@ def bound(x: int, upper: int, lower: int) -> int:
     """
     if x > upper:
         return upper
-    elif x < lower:
+    if x < lower:
         return lower
-    else:
-        return x
+    return x
 
 
 def rx(imageArray: np.ndarray, sparse: bool =False,
