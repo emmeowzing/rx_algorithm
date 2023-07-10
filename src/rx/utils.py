@@ -6,7 +6,7 @@ from typing import Generator
 
 from PIL import Image
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 from contextlib import contextmanager
 
 import numpy as np
