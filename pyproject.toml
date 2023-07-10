@@ -109,7 +109,7 @@ logging-format-style = "old"
 logging-modules = ["logging"]
 
 [tool.pylint."messages control"]
-disable = "raw-checker-failed,bad-inline-option,locally-disabled,file-ignored,suppressed-message,useless-suppression,deprecated-pragma,use-symbolic-message-instead,invalid-name,superfluous-parens,line-too-long,missing-final-newline,logging-fstring-interpolation,too-many-instance-attributes,unused-argument,unused-import"
+disable = "raw-checker-failed,bad-inline-option,locally-disabled,file-ignored,suppressed-message,useless-suppression,deprecated-pragma,use-symbolic-message-instead,invalid-name,superfluous-parens,line-too-long,missing-final-newline,logging-fstring-interpolation,too-many-instance-attributes,unused-argument,unused-import,too-many-locals"
 enable = "c-extension-no-member"
 
 [tool.pylint.method_args]

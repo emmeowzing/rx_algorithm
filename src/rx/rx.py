@@ -26,12 +26,12 @@ def generateRandExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
     name = f'random_{X}x{Y}.{format}'
     if name in os.listdir(REFERENCE_OUT_DIR):
         return os.path.getsize(REFERENCE_OUT_DIR + name)
-    else:
-        # Generate a random image
-        data = np.random.randint(0, 255, size=(Y,X,channels))
-        to_save = Image.fromarray(data.astype(np.uint8))
-        to_save.save(REFERENCE_OUT_DIR + name)
-        return os.path.getsize(REFERENCE_OUT_DIR + name)
+
+    # Generate a random image
+    data = np.random.randint(0, 255, size=(Y,X,channels))
+    to_save = Image.fromarray(data.astype(np.uint8))
+    to_save.save(REFERENCE_OUT_DIR + name)
+    return os.path.getsize(REFERENCE_OUT_DIR + name)
 
 
 def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') -> int:
@@ -41,12 +41,32 @@ def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
     name = f'zeros_{X}x{Y}.{format}'
     if name in os.listdir(REFERENCE_OUT_DIR):
         return os.path.getsize(REFERENCE_OUT_DIR + name)
+
+    # Generate a null image
+    data = np.zeros((Y,X,channels))
+    to_save = Image.fromarray(data.astype(np.uint8))
+    to_save.save(REFERENCE_OUT_DIR + name)
+    return os.path.getsize(REFERENCE_OUT_DIR + name)
+
+
+def bound(x: int, upper: int, lower: int) -> int:
+    """
+    Bound an integer by some upper and lower values.
+
+    Args:
+        x (int): value to bound.
+        upper (int): upper bound.
+        lower (int): lower bound.
+
+    Returns:
+        int: upper bound if x > upper, lower bound if x < lower. Unit function on x ∈ [lower, uppoer].
+    """
+    if x > upper:
+        return upper
+    elif x < lower:
+        return lower
     else:
-        # Generate a null image
-        data = np.zeros((Y,X,channels))
-        to_save = Image.fromarray(data.astype(np.uint8))
-        to_save.save(REFERENCE_OUT_DIR + name)
-        return os.path.getsize(REFERENCE_OUT_DIR + name)
+        return x
 
 
 def rx(imageArray: np.ndarray, sparse: bool =False,
@@ -92,13 +112,9 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
             dataSize = os.path.getsize(imPath)
 
             # Control bounds (just in case, though it's unlikely)
-            if dataSize > randSize:
-                dataSize = randSize
+            dataSize = bound(dataSize, nullSize, randSize)
 
-            if dataSize < nullSize:
-                dataSize = nullSize
-
-            # FIXME: best determination of subset size from entropy estimate?
+            # Best determination of subset size from entropy estimate?
             entropy = int((dataSize - nullSize) / (randSize - nullSize) * size)
 
         # Generate a subset of the image to work with
