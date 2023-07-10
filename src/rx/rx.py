@@ -26,12 +26,12 @@ def generateRandExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
     name = f'random_{X}x{Y}.{format}'
     if name in os.listdir(REFERENCE_OUT_DIR):
         return os.path.getsize(REFERENCE_OUT_DIR + name)
-    else:
-        # Generate a random image
-        data = np.random.randint(0, 255, size=(Y,X,channels))
-        to_save = Image.fromarray(data.astype(np.uint8))
-        to_save.save(REFERENCE_OUT_DIR + name)
-        return os.path.getsize(REFERENCE_OUT_DIR + name)
+
+    # Generate a random image
+    data = np.random.randint(0, 255, size=(Y,X,channels))
+    to_save = Image.fromarray(data.astype(np.uint8))
+    to_save.save(REFERENCE_OUT_DIR + name)
+    return os.path.getsize(REFERENCE_OUT_DIR + name)
 
 
 def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') -> int:
@@ -41,25 +41,44 @@ def generateNullExtreme(X: int, Y: int, channels: int =3, format: str ='png') ->
     name = f'zeros_{X}x{Y}.{format}'
     if name in os.listdir(REFERENCE_OUT_DIR):
         return os.path.getsize(REFERENCE_OUT_DIR + name)
-    else:
-        # Generate a null image
-        data = np.zeros((Y,X,channels))
-        to_save = Image.fromarray(data.astype(np.uint8))
-        to_save.save(REFERENCE_OUT_DIR + name)
-        return os.path.getsize(REFERENCE_OUT_DIR + name)
+
+    # Generate a null image
+    data = np.zeros((Y,X,channels))
+    to_save = Image.fromarray(data.astype(np.uint8))
+    to_save.save(REFERENCE_OUT_DIR + name)
+    return os.path.getsize(REFERENCE_OUT_DIR + name)
 
 
-def rx(imageArray: np.ndarray, sparse: bool =False, 
+def bound(x: int, upper: int, lower: int) -> int:
+    """
+    Bound an integer by some upper and lower values.
+
+    Args:
+        x (int): value to bound.
+        upper (int): upper bound.
+        lower (int): lower bound.
+
+    Returns:
+        int: upper bound if x > upper, lower bound if x < lower. Unit function on x ∈ [lower, uppoer].
+    """
+    if x > upper:
+        return upper
+    if x < lower:
+        return lower
+    return x
+
+
+def rx(imageArray: np.ndarray, sparse: bool =False,
        imPath: Optional[str] =None, npts: Optional[int] =None) -> np.ndarray:
     """
-    Compute the RX algorithm on an image. This function returns an array with 
-    one channel, which represents the number of standard deviations a certain 
+    Compute the RX algorithm on an image. This function returns an array with
+    one channel, which represents the number of standard deviations a certain
     pixel lies from the mean pixel value.
 
-    Set `sparse' to true if you're expecting the image to be largely the same 
-    color, or, in other words, most of the pixels to be very similar (e.g. an 
-    image of a field looking down from a drone will be mostly green). This 
-    produces a time savings since the covariance matrix may be estimated from 
+    Set `sparse' to true if you're expecting the image to be largely the same
+    color, or, in other words, most of the pixels to be very similar (e.g. an
+    image of a field looking down from a drone will be mostly green). This
+    produces a time savings since the covariance matrix may be estimated from
     a random subset of the pixels. If you do not explicitly state the number
     of pixels to use in this subset, then you're required to provide a path to
     the original image file for subset cardinality estimation.
@@ -72,10 +91,10 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
         raise ValueError(
             f'rx expected image with 3 axes, received {imageArray.ndim}'
         )
-    
+
     Y, X, channels = imageArray.shape
     size = Y * X
-    
+
     if sparse:
         ## Estimate entropy from subset
 
@@ -90,17 +109,13 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
             nullSize = generateNullExtreme(X, Y)
             randSize = generateRandExtreme(X, Y)
             dataSize = os.path.getsize(imPath)
-            
+
             # Control bounds (just in case, though it's unlikely)
-            if dataSize > randSize:
-                dataSize = randSize
-            
-            if dataSize < nullSize:
-                dataSize = nullSize
-            
-            # FIXME: best determination of subset size from entropy estimate?
+            dataSize = bound(dataSize, nullSize, randSize)
+
+            # Best determination of subset size from entropy estimate?
             entropy = int((dataSize - nullSize) / (randSize - nullSize) * size)
-        
+
         # Generate a subset of the image to work with
         sample = np.random.choice(size, size=entropy)
         flatIm = imageArray.reshape(size, channels)
@@ -115,18 +130,18 @@ def rx(imageArray: np.ndarray, sparse: bool =False,
         invCovMat = np.linalg.inv(covMat)
     else:
         ## Use every pixel
-        
+
         # Get the absolute average RGB vector
         average = np.average(imageArray, axis=(0, 1))
-        
+
         # Compute difference between every RGB value and the mean RGB value
         # (N, M, channels) - (channels,)
         subtracted = imageArray - average
-        
+
         # Compute the inverse covariance matrix
         covMat = np.cov(subtracted.reshape(size, channels).T, ddof=0)
         invCovMat = np.linalg.inv(covMat)
-        
+
     # Compute mahalanobis metric on every pixel
     new_arr = np.einsum(
         'ijk,km,ijm->ij', subtracted, invCovMat, subtracted,

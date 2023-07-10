@@ -4,10 +4,10 @@ Additional utilities unrelated to the algorithm's implementation.
 
 from typing import Generator
 
+from contextlib import contextmanager
 from PIL import Image
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from contextlib import contextmanager
+# from mpl_toolkits.mplot3d import Axes3D
 
 import numpy as np
 

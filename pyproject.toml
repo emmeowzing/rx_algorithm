@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "rx_algorithm"
+version = "0.0.1"
+description = "RX algorithm implementation in NumPy"
+authors = ["Emma Doyle <emma@premiscale.com>"]
+maintainers = ["Emma Doyle <emma@premiscale.com>"]
+license = "GPLv3"
+readme = "README.md"
+packages = [
+  { include = "src" }
+]
+include = [
+  "LICENSE"
+]
+keywords = [
+    "rx",
+    "algorithm",
+    "mahalanobis",
+    "image"
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.25.1"
+pillow = "^10.0.0"
+matplotlib = "^3.7.2"
+
+[tool.poetry.group.dev.dependencies]
+twine = "^4.0.2"
+pylint = "^2.15.10"
+pre-commit = "^3.0.0"
+types-pillow = "^10.0.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+# rxpy = "src.rxpy.cli:main"
+
+[tool.mypy]
+python_version = "3.9"
+strict_optional = true
+ignore_missing_imports = true
+
+# pylint
+
+[tool.pylint.main]
+fail-under = 6.0
+py-version = 3.9
+
+[tool.pylint."messages control"]
+disable = "raw-checker-failed,bad-inline-option,locally-disabled,file-ignored,suppressed-message,useless-suppression,deprecated-pragma,use-symbolic-message-instead,invalid-name,superfluous-parens,line-too-long,missing-final-newline,logging-fstring-interpolation,too-many-instance-attributes,unused-argument,unused-import,too-many-locals"
+enable = "c-extension-no-member"

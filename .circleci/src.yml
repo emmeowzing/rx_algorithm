@@ -1,0 +1,170 @@
+version: 2.1
+
+
+orbs:
+  general: bjd2385/general@0.7.5
+
+
+executors:
+  python-3-9:
+    docker:
+      - image: cimg/python:3.9
+
+
+commands:
+  install-poetry:
+    description: Install poetry
+    parameters:
+      poetry-version:
+        type: string
+        description: Poetry version to install.
+        default: 1.3.1
+    steps:
+      - run:
+          name: Install poetry
+          command: |
+            pip install --upgrade pip
+
+            # Remove poetry from venv, install via pip.
+            sudo rm /home/circleci/.local/bin/poetry
+            pip install poetry==<< parameters.poetry-version >>
+            sudo ln -s /home/circleci/.pyenv/shims/poetry /home/circleci/.local/bin/poetry
+            poetry --version
+
+
+jobs:
+  pylint:
+    description: PyLint
+    executor: python-3-9
+    resource_class: << parameters.resource-class >>
+    parameters:
+      resource-class:
+        type: enum
+        enum:
+          - small
+          - medium
+          - large
+          - xlarge
+          - 2xlarge
+        default: small
+        description: Resource class to run as.
+      modules_path:
+        type: string
+        description: Path to modules directory in package.
+        default: src
+      configuration_file:
+        type: string
+        description: Path to pylint configuration file
+        default: pyproject.toml
+    steps:
+      - checkout
+      - install-poetry
+      - run:
+          name: Install dependencies with Poetry
+          command: |
+            # Install libvirt-python. Requires libvirt-dev package installed.
+            if ! pkg-config --print-errors --atleast-version=0.9.11 libvirt 2>/dev/null; then
+                sudo apt update && sudo apt install -y libvirt-dev
+            fi
+
+            poetry install -v --no-interaction --ansi --no-cache || true
+
+            pip install pylint
+      - run:
+          name: Pylint
+          command: |
+            pylint -j "$(nproc --all)" --rcfile="$(pwd)"/<< parameters.configuration_file >> "$(pwd)"/<< parameters.modules_path >>
+
+  release-twine-setup-py:
+    description: twine upload
+    executor: python-3-9
+    resource_class: << parameters.resource-class >>
+    parameters:
+      resource-class:
+        type: enum
+        enum:
+          - small
+          - medium
+          - large
+          - xlarge
+          - 2xlarge
+        default: small
+        description: Resource class to run as.
+      user:
+        description: PyPi username.
+        type: string
+        default: $TWINE_USERNAME
+      password:
+        description: PyPi API token.
+        type: string
+        default: $TWINE_PASSWORD
+      repository:
+        description: Repository name to upload to. Must have a URL set in .pypirc.
+        type: string
+        default: python
+      config:
+        description: Location of the .pypirc-file to use.
+        type: string
+        default: .pypirc
+      version:
+        description: Override the version of the uploaded artifact in pyproject.toml. Mainly for development pipelines.
+        type: string
+        default: '-1'
+    steps:
+      - checkout
+      - install-poetry
+      - unless:
+          condition:
+            equal: [<< parameters.version >>, '-1']
+          steps:
+            - run:
+                name: Update pyproject.toml version
+                command: |+
+                  _VERSION="$(grep -oiP "(?<=^(version = \")).*(?=\")" pyproject.toml)"
+
+                  sed -i "s@version = \"${_VERSION}\"@version = \"<< parameters.version >>\"@" pyproject.toml
+      - run:
+          name: Build package
+          command: |+
+            poetry build
+      - run:
+          name: Publish package to PyPI
+          command: |+
+            pip install twine
+            twine upload dist/* -u << parameters.user >> -p << parameters.password >> --repository << parameters.repository >> --non-interactive --config-file << parameters.config >>
+
+
+workflows:
+  src:
+    jobs:
+      - pylint:
+          name: pylint
+          context: nexus
+
+      # develop
+
+      - release-twine-setup-py:
+          name: twine upload [python-develop]
+          context: nexus
+          repository: python-develop
+          version: 0.0.<< pipeline.number >>
+          requires:
+            - pylint
+          filters:
+            branches:
+              ignore:
+                - master
+
+      # master
+
+      - release-twine-setup-py:
+          name: twine upload [python-master]
+          context: nexus
+          repository: python-master
+          version: 0.0.<< pipeline.number >>
+          requires:
+            - pylint
+          filters:
+            branches:
+              only:
+                - master
