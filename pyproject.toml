@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "rx-algorithm"
+name = "rxpy"
 version = "0.0.1"
 description = "RX algorithm implementation in NumPy"
 authors = ["Emma Doyle <emma@premiscale.com>"]
